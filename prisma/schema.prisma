@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Institution {
+  id              String            @id @default(uuid())
+  name            String
+  description     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  users           User[]
+  balance         Int
+  groups          Group[]
+  messages        Message[]
+  Client          Client[]
+  MessageTemplate MessageTemplate[]
+}
+
+model User {
+  id            String      @id @default(uuid())
+  name          String
+  email         String      @unique
+  password      String?
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  institutionId String
+  role          String      @default("USER")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  groups        Group[]
+  messages      Message[]
+  templateMessages MessageTemplate[]
+}
+
+model Client {
+  id            String      @id @default(uuid())
+  name          String
+  phoneNumber   String      @unique
+  gender        String?
+  email         String?
+  birthday      DateTime?   
+  institution   Institution []
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  groups        Group[]     @relation("clientsGroup")
+  messages      Message[]
+}
+
+model Group {
+  id            String      @id @default(uuid())
+  name          String
+  description   String?
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  institutionId String
+  clients       Client[]    @relation("clientsGroup")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  createdBy     User        @relation(fields: [userId], references: [id])
+  userId        String
+  messages      Message[]
+}
+
+model MessageTemplate {
+  id            String      @id @default(uuid())
+  title         String
+  content       String
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  institutionId String
+  createdBy     User        @relation(fields: [userId], references: [id])
+  userId        String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  Message       Message[]
+}
+
+model Message {
+  id                String           @id @default(uuid())
+  content           String
+  sendTo            Client?          @relation(fields: [clientId], references: [id])
+  clientId          String?
+  destinationGroup  String?
+  groupId           String?
+  status            String           @default("PENDING")
+  institution       Institution      @relation(fields: [institutionId], references: [id])
+  institutionId     String
+  messageTemplate   MessageTemplate? @relation(fields: [messageTemplateId], references: [id])
+  messageTemplateId String?
+  createdBy         User             @relation(fields: [userId], references: [id])
+  userId            String
+  sentAt            DateTime?
+  Group             Group?           @relation(fields: [groupId], references: [id])
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
